@@ -19,7 +19,7 @@ exports.createQRCode = async (req, res) => {
     }
 
     // Generate the URL for the QR code
-    const url = `https://9699-2401-4900-3b1c-602d-3978-1841-f496-3b3.ngrok-free.app/${restaurantName}/${tableNo}/menu`;
+    const url = `/${restaurantName}/${tableNo}/menu`;
 
     // Generate the QR code image
     const qrCodeImage = await generateQR(url);
