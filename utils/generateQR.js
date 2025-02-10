@@ -9,7 +9,7 @@ const generateQR = async (url) => {
       margin: 2, // Margin around the QR code
       width: 300, // Width of the QR code image
       color: {
-        dark: "#000000", // Dark color (QR code dots)
+        dark: "#000000", // Dark color (QR code dotsss)
         light: "#ffffff", // Light color (background)
       },
     });
