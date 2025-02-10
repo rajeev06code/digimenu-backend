@@ -8,7 +8,7 @@ const port = 3000;
 app.use(cors());
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://digimenu-backend-uuw2.onrender.com",
+  "https://digimenu-frontend.vercel.app",
 ];
 app.use(
   cors({

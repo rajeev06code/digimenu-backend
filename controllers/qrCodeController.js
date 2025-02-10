@@ -19,7 +19,7 @@ exports.createQRCode = async (req, res) => {
     }
 
     // Generate the URL for the QR code
-    const url = `https://digimenu-backend-uuw2.onrender.com/${restaurantName}/${tableNo}/menu`;
+    const url = `https://digimenu-frontend.vercel.app/${restaurantName}/${tableNo}/menu`;
 
     // Generate the QR code image
     const qrCodeImage = await generateQR(url);
