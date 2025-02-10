@@ -1,0 +1,25 @@
+{
+  "name": "digital-menu",
+  "version": "1.0.0",
+  "description": "This is a QR-CODE scanner based digital menu web app backend.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon index.js",
+    "tunnel:api": "npx localtunnel --port 3000"
+  },
+  "author": "Rajeev sharma",
+  "license": "ISC",
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "dependencies": {
+    "cloudinary": "^2.5.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "localtunnel": "^2.0.2",
+    "mongoose": "^8.9.7",
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^3.1.9",
+    "qrcode": "^1.5.4"
+  }
+}
