@@ -8,7 +8,7 @@ const port = 3000;
 app.use(cors());
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://9699-2401-4900-3b1c-602d-3978-1841-f496-3b3.ngrok-free.app",
+  "https://digimenu-backend-uuw2.onrender.com",
 ];
 app.use(
   cors({
