@@ -4,7 +4,7 @@ const generateQR = async (url) => {
   try {
     // Generate QR code as a data URL (base64 encoded image)
     const qrCodeImage = await QRCode.toDataURL(url, {
-      errorCorrectionLevel: "H", // High error correction
+      errorCorrectionLevel: "H", // High error correctionddd
       type: "image/png", // Output format
       margin: 2, // Margin around the QR code
       width: 300, // Width of the QR code image
