@@ -2,81 +2,154 @@ const FoodItemsList = require("../models/FoodItemsList");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 
-exports.getFoodItems = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1; // Default to page 1 if not specified
-    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not specified
-    const skip = (page - 1) * limit;
-
-    const foodItems = await FoodItemsList.find().skip(skip).limit(limit);
-
-    const totalItems = await FoodItemsList.countDocuments();
-    const totalPages = Math.ceil(totalItems / limit);
-
-    res.status(200).json({
-      foodItems,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalItems,
-        itemsPerPage: limit,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
+// Configure cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Save files temporarily in "uploads" folder
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + file.originalname);
   },
 });
 
-const upload = multer({ storage });
+exports.upload = multer({ storage }).single("image");
 
-exports.createFoodItem = async (req, res) => {
+// Combined API for getting, searching, and filtering food items
+exports.getFoodItems = async (req, res) => {
   try {
-    const { name, price, description, category } = req.body;
-    const file = req.file; // Uploaded image file
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      category,
+      restaurantId, // Required parameter
+    } = req.query;
 
-    if (!file) {
-      return res.status(400).json({ error: "Image file is required" });
+    // Check if restaurantId is provided
+    if (!restaurantId) {
+      return res.status(400).json({
+        success: false,
+        error: "Restaurant ID is required",
+      });
     }
 
+    // Build query object starting with restaurantId
+    let query = { restaurantId }; // Always filter by restaurant
+
+    // Add search condition if search term provided
+    if (search) {
+      query.name = { $regex: new RegExp(search, "i") };
+    }
+
+    // Add category filter if categories provided
+    if (category) {
+      const categories = category.split(",").map((cat) => cat.trim());
+      query.category = { $in: categories };
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Execute query with pagination
+    const [foodItems, totalItems] = await Promise.all([
+      FoodItemsList.find(query)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .select("-__v")
+        .lean(),
+      FoodItemsList.countDocuments(query),
+    ]);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalItems / parseInt(limit));
+
+    // Return response
+    res.status(200).json({
+      success: true,
+      foodItems,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems,
+        itemsPerPage: parseInt(limit),
+      },
+      filters: {
+        search: search || null,
+        categories: category ? category.split(",") : null,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch food items",
+      details: error.message,
+    });
+  }
+};
+
+// Create food item with optimized image upload
+exports.createFoodItem = async (req, res) => {
+  try {
+    const { name, price, description, category, restaurantId, available } =
+      req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        error: "Image file is required",
+      });
+    }
+
+    if (!restaurantId) {
+      return res.status(400).json({
+        success: false,
+        error: "Restaurant ID is required",
+      });
+    }
+
+    // Upload image to cloudinary with optimized settings
     const uploadResult = await cloudinary.uploader.upload(file.path, {
-      folder: "food-items",
-      public_id: Date.now() + "-" + file.originalname,
+      folder: `food-items/${restaurantId}`,
+      public_id: `${Date.now()}-${file.originalname}`,
       resource_type: "image",
+      quality: "auto", // Automatic quality optimization
+      fetch_format: "auto", // Automatic format optimization
+      width: 800, // Reasonable max width
+      height: 800, // Reasonable max height
+      crop: "limit", // Maintain aspect ratio
     });
 
-    // Create food item with Cloudinary image URL
-    const newFoodItem = new FoodItemsList({
+    // Create food item
+    const newFoodItem = await FoodItemsList.create({
       name,
       price,
       description,
       category,
-      image: uploadResult.secure_url, // Cloudinary image URL
+      restaurantId,
+      available,
+      image: uploadResult.secure_url,
     });
 
-    await newFoodItem.save();
-    res.status(201).json(newFoodItem);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(201).json({
+      success: true,
+      foodItem: newFoodItem,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Failed to create food item",
+      details: error.message,
+    });
   }
 };
-
-// Export Multer Middleware for Routes
-exports.upload = upload.single("image");
 
 exports.searchFoodItems = async (req, res) => {
   try {

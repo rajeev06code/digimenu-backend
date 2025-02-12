@@ -3,13 +3,16 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const qrCodeRoutes = require("./routes/qrCodeRoutes");
 const foodItemRoutes = require("./routes/foodItemsRoute");
+const QRcode = require("./models/QRcode");
+
 const app = express();
 const port = 3000;
-app.use(cors());
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://digimenu-frontend.vercel.app",
 ];
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -21,13 +24,33 @@ app.use(
     },
   })
 );
-connectDB();
 
-app.use(express.json());
+// Connect to database and handle index
+const initializeDB = async () => {
+  await connectDB();
 
-app.use("/api", qrCodeRoutes);
-app.use("/api", foodItemRoutes);
+  try {
+    // Drop the problematic index
+    await QRcode.collection.dropIndex("restaurantName_1");
+    console.log("Old index dropped successfully");
+  } catch (err) {
+    // Index might not exist, that's okay
+    console.log("Note: Index drop attempted");
+  }
+};
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+initializeDB()
+  .then(() => {
+    app.use(express.json());
+
+    app.use("/api", qrCodeRoutes);
+    app.use("/api", foodItemRoutes);
+
+    app.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to initialize database:", err);
+    process.exit(1);
+  });

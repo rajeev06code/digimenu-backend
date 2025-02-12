@@ -1,11 +1,23 @@
 const mongoose = require("mongoose");
 
-const foodItemSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  price: { type: String, required: true },
-  description: { type: String },
-  image: { type: String, required: true },
-  category: { type: String, required: true },
-});
+const foodItemsSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    description: { type: String },
+    category: { type: String, required: true },
+    image: { type: String, required: true },
+    restaurantId: { type: String, required: true },
+    available: { type: Boolean, default: true },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-module.exports = mongoose.model("FoodItem", foodItemSchema);
+// Add indexes for better query performance
+foodItemsSchema.index({ name: "text" });
+foodItemsSchema.index({ category: 1 });
+foodItemsSchema.index({ restaurantId: 1 });
+
+module.exports = mongoose.model("FoodItemsList", foodItemsSchema);
